@@ -1,0 +1,26 @@
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  name: validating-webhook-configuration
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-ratelimit-itbl-sre-co-v1alpha1-ratelimitedconsumer
+  failurePolicy: Fail
+  name: vratelimitedconsumer-v1alpha1.kb.io
+  rules:
+  - apiGroups:
+    - ratelimit.itbl.sre.co
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - ratelimitedconsumers
+  sideEffects: None

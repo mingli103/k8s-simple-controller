@@ -1,0 +1,4 @@
+## Append samples of your project ##
+resources:
+- ratelimit_v1alpha1_ratelimitedconsumer.yaml
+# +kubebuilder:scaffold:manifestskustomizesamples
