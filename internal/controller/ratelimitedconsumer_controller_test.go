@@ -18,6 +18,7 @@ package controller
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -88,14 +89,16 @@ var _ = Describe("RateLimitedConsumer Controller", func() {
 					},
 					Spec: ratelimitv1alpha1.RateLimitedConsumerSpec{
 						RateLimit: ratelimitv1alpha1.RateLimit{
-							Name: pluginName,
+							Name: "test-rate-limit-5f2f1e04",
 						},
 						TargetRoute: ratelimitv1alpha1.TargetRoute{
 							Name: routeName,
 						},
 					},
 				}
+				Expect(resource.Spec.RateLimit.Name).ToNot(BeEmpty())
 				Expect(k8sClient.Create(ctx, resource)).To(Succeed())
+
 			}
 		})
 
@@ -135,6 +138,7 @@ var _ = Describe("RateLimitedConsumer Controller", func() {
 				var updated gatewayv1.HTTPRoute
 				err := k8sClient.Get(ctx, types.NamespacedName{Name: routeName, Namespace: testNamespace}, &updated)
 				g.Expect(err).ToNot(HaveOccurred())
+				fmt.Println("Current annotation value:", updated.Annotations["konghq.com/plugins"])
 				return updated.Annotations
 			}, timeout, interval).Should(HaveKeyWithValue("konghq.com/plugins", pluginName))
 

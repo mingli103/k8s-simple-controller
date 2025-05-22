@@ -61,84 +61,83 @@ type RateLimitedConsumerReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.20.4/pkg/reconcile
 func (r *RateLimitedConsumerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	logger := logf.FromContext(ctx).WithValues("controller", "RateLimitedConsumer", "name", req.Name, "namespace", req.Namespace)
+	logger := logf.FromContext(ctx).WithValues("name", req.Name, "namespace", req.Namespace)
 	logger.Info("Reconciling RateLimitedConsumer")
 
 	var rlc ratelimitv1alpha1.RateLimitedConsumer
 	var route gatewayv1.HTTPRoute
-	pluginName := rlc.Spec.RateLimit.Name
 
-	err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+	// err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 
-		if err := r.Get(ctx, req.NamespacedName, &rlc); err != nil {
-			// logger.Error(err, "unable to fetch RateLimitedConsumer")
-			// return ctrl.Result{}, client.IgnoreNotFound(err)
-			if errors.IsNotFound(err) {
-				// Resource was deleted, nothing to do.
-				return nil
-			}
-			logger.Error(err, "unable to fetch RateLimitedConsumer")
-			return err
+	if err := r.Get(ctx, req.NamespacedName, &rlc); err != nil {
+		// logger.Error(err, "unable to fetch RateLimitedConsumer")
+		// return ctrl.Result{}, client.IgnoreNotFound(err)
+		if errors.IsNotFound(err) {
+			// Resource was deleted, nothing to do.
+			return ctrl.Result{}, nil
 		}
-		// Fetch the target HTTPRoute
-
-		routeKey := types.NamespacedName{
-			Name:      rlc.Spec.TargetRoute.Name,
-			Namespace: rlc.Namespace,
-		}
-		if err := r.Get(ctx, routeKey, &route); err != nil {
-			logger.Error(err, "failed to get HTTPRoute")
-			return err
-		}
-
-		// Ensure annotations map exists
-		if route.Annotations == nil {
-			route.Annotations = map[string]string{}
-		}
-
-		// Preserve existing plugins if any
-		existingPlugins := route.Annotations["konghq.com/plugins"]
-		if existingPlugins != "" {
-			// Merge plugins: append the new one if not already present
-			plugins := strings.Split(existingPlugins, ",")
-			found := false
-			for _, p := range plugins {
-				if strings.TrimSpace(p) == pluginName {
-					found = true
-					logger.Info("Plugin already exists in annotations")
-					break
-				}
-			}
-			if !found {
-				plugins = append(plugins, pluginName)
-				// Check if the previous plugin is the same as the new one
-				logger.Info("Adding new plugin to existing plugins",
-					"route", route.Name,
-					"pluginName", pluginName,
-					"previousPlugin", plugins,
-				)
-			}
-			route.Annotations["konghq.com/plugins"] = strings.Join(plugins, ",")
-		} else {
-			// First plugin being added
-			route.Annotations["konghq.com/plugins"] = pluginName
-			logger.Info("First plugin being added to annotations",
-				"route", route.Name,
-				"pluginName", pluginName,
-			)
-		}
-
-		if err := r.Update(ctx, &route); err != nil {
-			logger.Error(err, "failed to update HTTPRoute")
-			return err
-		}
-		return nil
-
-	})
-	if err != nil {
-		logger.Error(err, "failed to update HTTPRoute annotations after retry")
+		logger.Error(err, "unable to fetch RateLimitedConsumer")
 		return ctrl.Result{}, err
 	}
+	// Fetch the target HTTPRoute
+
+	routeKey := types.NamespacedName{
+		Name:      rlc.Spec.TargetRoute.Name,
+		Namespace: rlc.Namespace,
+	}
+	if err := r.Get(ctx, routeKey, &route); err != nil {
+		logger.Error(err, "failed to get HTTPRoute")
+		return ctrl.Result{}, err
+	}
+
+	// Ensure annotations map exists
+	if route.Annotations == nil {
+		route.Annotations = map[string]string{}
+	}
+
+	// Preserve existing plugins if any
+	pluginName := rlc.Spec.RateLimit.Name
+	existingPlugins := route.Annotations["konghq.com/plugins"]
+	if existingPlugins != "" {
+		// Merge plugins: append the new one if not already present
+		plugins := strings.Split(existingPlugins, ",")
+		found := false
+		for _, p := range plugins {
+			if strings.TrimSpace(p) == pluginName {
+				found = true
+				logger.Info("Plugin already exists in annotations")
+				break
+			}
+		}
+		if !found {
+			plugins = append(plugins, pluginName)
+			// Check if the previous plugin is the same as the new one
+			logger.Info("Adding new plugin to existing plugins",
+				"route", route.Name,
+				"pluginName", pluginName,
+				"previousPlugin", plugins,
+			)
+		}
+		route.Annotations["konghq.com/plugins"] = strings.Join(plugins, ",")
+	} else {
+		// First plugin being added
+		route.Annotations["konghq.com/plugins"] = pluginName
+		logger.Info("First plugin being added to annotations",
+			"route", route.Name,
+			"pluginName", pluginName,
+		)
+	}
+
+	if err := r.Update(ctx, &route); err != nil {
+		logger.Error(err, "failed to update HTTPRoute")
+		return ctrl.Result{}, err
+	}
+
+	// })
+	// if err != nil {
+	// 	logger.Error(err, "failed to update HTTPRoute annotations after retry")
+	// 	return ctrl.Result{}, err
+	// }
 	// Update the RateLimitedConsumer status
 
 	condition := metav1.Condition{
@@ -162,8 +161,8 @@ func (r *RateLimitedConsumerReconciler) Reconcile(ctx context.Context, req ctrl.
 		return nil
 	})
 	if status_err != nil {
-		logger.Error(err, "failed to update status after retry")
-		return ctrl.Result{}, err
+		logger.Error(status_err, "failed to update status after retry")
+		return ctrl.Result{}, status_err
 	}
 	return ctrl.Result{}, nil
 }
@@ -211,6 +210,7 @@ var PluginAnnotationChanged = predicate.Funcs{
 }
 
 func (r *RateLimitedConsumerReconciler) mapHTTPRouteToRLC(ctx context.Context, obj client.Object) []reconcile.Request {
+	fmt.Printf("mapHTTPRouteToRLC")
 	route, ok := obj.(*gatewayv1.HTTPRoute)
 	if !ok {
 		return nil
