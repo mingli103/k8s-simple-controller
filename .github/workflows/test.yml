@@ -1,0 +1,58 @@
+name: test
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+      
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    env:
+      GO111MODULE: "on"
+      ENABLE_WEBHOOKS: "false"  # Set to true if you want to run webhook tests
+
+    services:
+      k3s:
+        image: rancher/k3s:v1.29.1-k3s1
+        options: --privileged
+        ports:
+          - 6443:6443
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: 1.21.x
+
+      - name: Install dependencies
+        run: go mod tidy
+
+      - name: Verify gofmt
+        run: |
+          if [ -n "$(gofmt -l .)" ]; then
+            echo "Code is not formatted:"
+            gofmt -d .
+            exit 1
+          fi
+
+      - name: Lint
+        run: go vet ./...
+
+      - name: Build manager
+        run: make manager
+
+      - name: Generate code (verify no diff)
+        run: |
+          make generate manifests
+          git diff --exit-code || (echo "Generated files are out of date. Run make generate." && exit 1)
+
+      - name: Run tests
+        run: make test
