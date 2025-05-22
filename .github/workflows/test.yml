@@ -46,9 +46,6 @@ jobs:
       - name: Lint
         run: go vet ./...
 
-      - name: Build manager
-        run: make manager
-
       - name: Generate code (verify no diff)
         run: |
           make generate manifests
