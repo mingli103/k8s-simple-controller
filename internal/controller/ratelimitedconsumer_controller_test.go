@@ -18,40 +18,82 @@ package controller
 
 import (
 	"context"
+	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	ratelimitv1alpha1 "github.com/mingli103/k8s-controller/api/v1alpha1"
 )
 
 var _ = Describe("RateLimitedConsumer Controller", func() {
 	Context("When reconciling a resource", func() {
-		const resourceName = "test-resource"
-
+		const (
+			timeout  = time.Second * 10
+			interval = time.Millisecond * 250
+		)
 		ctx := context.Background()
 
+		var (
+			routeName     = "test-route"
+			pluginName    = "test-rate-limit-5f2f1e04"
+			rlcName       = "test-rlc"
+			testNamespace = "default"
+		)
 		typeNamespacedName := types.NamespacedName{
-			Name:      resourceName,
-			Namespace: "default", // TODO(user):Modify as needed
+			Name:      rlcName,
+			Namespace: "default",
 		}
 		ratelimitedconsumer := &ratelimitv1alpha1.RateLimitedConsumer{}
 
 		BeforeEach(func() {
+			// Create a test HTTPRoute
+			By("creating the test HTTPRoute")
+			route := &gatewayv1.HTTPRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      routeName,
+					Namespace: testNamespace,
+				},
+				Spec: gatewayv1.HTTPRouteSpec{
+					Rules: []gatewayv1.HTTPRouteRule{
+						{
+							BackendRefs: []gatewayv1.HTTPBackendRef{
+								{
+									BackendRef: gatewayv1.BackendRef{
+										BackendObjectReference: gatewayv1.BackendObjectReference{
+											Name: gatewayv1.ObjectName("example-svc"),
+											Port: func(p gatewayv1.PortNumber) *gatewayv1.PortNumber { return &p }(gatewayv1.PortNumber(80)),
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			}
+			Expect(k8sClient.Create(ctx, route)).Should(Succeed())
+
 			By("creating the custom resource for the Kind RateLimitedConsumer")
 			err := k8sClient.Get(ctx, typeNamespacedName, ratelimitedconsumer)
 			if err != nil && errors.IsNotFound(err) {
 				resource := &ratelimitv1alpha1.RateLimitedConsumer{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      resourceName,
-						Namespace: "default",
+						Name:      rlcName,
+						Namespace: testNamespace,
 					},
-					// TODO(user): Specify other spec details if needed.
+					Spec: ratelimitv1alpha1.RateLimitedConsumerSpec{
+						RateLimit: ratelimitv1alpha1.RateLimit{
+							Name: pluginName,
+						},
+						TargetRoute: ratelimitv1alpha1.TargetRoute{
+							Name: routeName,
+						},
+					},
 				}
 				Expect(k8sClient.Create(ctx, resource)).To(Succeed())
 			}
@@ -65,8 +107,16 @@ var _ = Describe("RateLimitedConsumer Controller", func() {
 
 			By("Cleanup the specific resource instance RateLimitedConsumer")
 			Expect(k8sClient.Delete(ctx, resource)).To(Succeed())
+
+			By("Cleanup the test HTTPRoute")
+			Expect(k8sClient.Delete(ctx, &gatewayv1.HTTPRoute{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      routeName,
+					Namespace: testNamespace,
+				},
+			})).To(Succeed())
 		})
-		It("should successfully reconcile the resource", func() {
+		It("should annotate the target HTTPRoute with the Kong plugin", func() {
 			By("Reconciling the created resource")
 			controllerReconciler := &RateLimitedConsumerReconciler{
 				Client: k8sClient,
@@ -79,6 +129,15 @@ var _ = Describe("RateLimitedConsumer Controller", func() {
 			Expect(err).NotTo(HaveOccurred())
 			// TODO(user): Add more specific assertions depending on your controller's reconciliation logic.
 			// Example: If you expect a certain status condition after reconciliation, verify it here.
+
+			// Verify annotation on the route
+			Eventually(func(g Gomega) map[string]string {
+				var updated gatewayv1.HTTPRoute
+				err := k8sClient.Get(ctx, types.NamespacedName{Name: routeName, Namespace: testNamespace}, &updated)
+				g.Expect(err).ToNot(HaveOccurred())
+				return updated.Annotations
+			}, timeout, interval).Should(HaveKeyWithValue("konghq.com/plugins", pluginName))
+
 		})
 	})
 })
