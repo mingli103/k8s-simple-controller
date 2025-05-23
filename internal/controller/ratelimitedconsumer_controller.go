@@ -67,8 +67,6 @@ func (r *RateLimitedConsumerReconciler) Reconcile(ctx context.Context, req ctrl.
 	var rlc ratelimitv1alpha1.RateLimitedConsumer
 	var route gatewayv1.HTTPRoute
 
-	// err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-
 	if err := r.Get(ctx, req.NamespacedName, &rlc); err != nil {
 		// logger.Error(err, "unable to fetch RateLimitedConsumer")
 		// return ctrl.Result{}, client.IgnoreNotFound(err)
@@ -127,17 +125,11 @@ func (r *RateLimitedConsumerReconciler) Reconcile(ctx context.Context, req ctrl.
 			"pluginName", pluginName,
 		)
 	}
-
 	if err := r.Update(ctx, &route); err != nil {
 		logger.Error(err, "failed to update HTTPRoute")
 		return ctrl.Result{}, err
 	}
 
-	// })
-	// if err != nil {
-	// 	logger.Error(err, "failed to update HTTPRoute annotations after retry")
-	// 	return ctrl.Result{}, err
-	// }
 	// Update the RateLimitedConsumer status
 
 	condition := metav1.Condition{
