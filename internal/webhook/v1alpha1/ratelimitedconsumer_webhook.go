@@ -101,8 +101,8 @@ func (v *RateLimitedConsumerCustomValidator) ValidateDelete(ctx context.Context,
 func validateRateLimitConsumer(ratelimitedconsumer *ratelimitv1alpha1.RateLimitedConsumer) error {
 	var allErrs field.ErrorList
 
-	if ratelimitedconsumer.Spec.RateLimit.Name == "" {
-		allErrs = append(allErrs, field.Invalid(field.NewPath("spec").Child("rateLimit").Child("name"), ratelimitedconsumer.Spec.RateLimit.Name, "rateLimit.name must not be empty"))
+	if len(ratelimitedconsumer.Spec.RateLimit.Names) == 0 {
+		allErrs = append(allErrs, field.Invalid(field.NewPath("spec").Child("rateLimit").Child("names"), ratelimitedconsumer.Spec.RateLimit.Names, "rateLimit.names must not be empty"))
 	}
 
 	if ratelimitedconsumer.Spec.TargetRoute.Name == "" {

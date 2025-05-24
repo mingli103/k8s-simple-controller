@@ -42,7 +42,7 @@ var _ = Describe("RateLimitedConsumer Controller", func() {
 
 		var (
 			routeName     = "test-route"
-			pluginName    = "test-rate-limit-5f2f1e04"
+			pluginName    = []string{"test-rate-limit-5f2f1e04"}
 			rlcName       = "test-rlc"
 			testNamespace = "default"
 		)
@@ -89,14 +89,14 @@ var _ = Describe("RateLimitedConsumer Controller", func() {
 					},
 					Spec: ratelimitv1alpha1.RateLimitedConsumerSpec{
 						RateLimit: ratelimitv1alpha1.RateLimit{
-							Name: "test-rate-limit-5f2f1e04",
+							Names: pluginName,
 						},
 						TargetRoute: ratelimitv1alpha1.TargetRoute{
 							Name: routeName,
 						},
 					},
 				}
-				Expect(resource.Spec.RateLimit.Name).ToNot(BeEmpty())
+				Expect(resource.Spec.RateLimit.Names).ToNot(BeEmpty())
 				Expect(k8sClient.Create(ctx, resource)).To(Succeed())
 
 			}

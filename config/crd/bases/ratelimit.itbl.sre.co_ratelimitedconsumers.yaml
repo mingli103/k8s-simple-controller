@@ -41,12 +41,13 @@ spec:
             description: RateLimitedConsumerSpec defines the desired state of RateLimitedConsumer.
             properties:
               rateLimit:
-                description: RateLimit defines rate limiting config
                 properties:
-                  name:
-                    type: string
+                  names:
+                    items:
+                      type: string
+                    type: array
                 required:
-                - name
+                - names
                 type: object
               targetRoute:
                 description: TargetRoute references the route to annotate

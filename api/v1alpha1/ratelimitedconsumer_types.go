@@ -33,8 +33,12 @@ type RateLimitedConsumerSpec struct {
 }
 
 // RateLimit defines rate limiting config
+// type RateLimit struct {
+// 	Name string `json:"name"`
+// }
+
 type RateLimit struct {
-	Name string `json:"name"`
+	Names []string `json:"names"`
 }
 
 // TargetRoute references the route to annotate

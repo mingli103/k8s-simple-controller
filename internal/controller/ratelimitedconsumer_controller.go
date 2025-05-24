@@ -19,6 +19,7 @@ package controller
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strings"
 
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -94,41 +95,91 @@ func (r *RateLimitedConsumerReconciler) Reconcile(ctx context.Context, req ctrl.
 	}
 
 	// Preserve existing plugins if any
-	pluginName := rlc.Spec.RateLimit.Name
+	pluginNames := rlc.Spec.RateLimit.Names
 	existingPlugins := route.Annotations["konghq.com/plugins"]
+
+	// Use a set to track plugins for deduplication
+	pluginSet := map[string]struct{}{}
+
+	// If existing annotation is non-empty, initialize the set with its contents
 	if existingPlugins != "" {
-		// Merge plugins: append the new one if not already present
-		plugins := strings.Split(existingPlugins, ",")
-		found := false
-		for _, p := range plugins {
-			if strings.TrimSpace(p) == pluginName {
-				found = true
-				logger.Info("Plugin already exists in annotations")
-				break
+		for _, p := range strings.Split(existingPlugins, ",") {
+			trimmed := strings.TrimSpace(p)
+			if trimmed != "" {
+				pluginSet[trimmed] = struct{}{}
 			}
+			logger.Info("Plugin already present in annotations", "plugin", p)
 		}
-		if !found {
-			plugins = append(plugins, pluginName)
-			// Check if the previous plugin is the same as the new one
-			logger.Info("Adding new plugin to existing plugins",
-				"route", route.Name,
-				"pluginName", pluginName,
-				"previousPlugin", plugins,
-			)
-		}
-		route.Annotations["konghq.com/plugins"] = strings.Join(plugins, ",")
 	} else {
-		// First plugin being added
-		route.Annotations["konghq.com/plugins"] = pluginName
-		logger.Info("First plugin being added to annotations",
-			"route", route.Name,
-			"pluginName", pluginName,
-		)
+		logger.Info("No existing plugins found in annotations")
 	}
+
+	// Add plugins from the RateLimit spec
+	for _, newPlugin := range pluginNames {
+		trimmed := strings.TrimSpace(newPlugin)
+		if trimmed == "" {
+			continue
+		}
+		if _, exists := pluginSet[trimmed]; exists {
+			logger.Info("Plugin already exists in annotation set", "plugin", trimmed)
+			continue
+		}
+		logger.Info("Adding plugin to annotation set", "plugin", trimmed)
+		pluginSet[trimmed] = struct{}{}
+	}
+
+	// Convert back to comma-separated string
+	var mergedPlugins []string
+	for p := range pluginSet {
+		mergedPlugins = append(mergedPlugins, p)
+	}
+	sort.Strings(mergedPlugins) // optional for consistency
+	route.Annotations["konghq.com/plugins"] = strings.Join(mergedPlugins, ",")
+
+	// Log final annotation value
+	logger.Info("Final plugin annotation", "route", route.Name, "plugins", route.Annotations["konghq.com/plugins"])
+
+	// Apply the update
 	if err := r.Update(ctx, &route); err != nil {
 		logger.Error(err, "failed to update HTTPRoute")
 		return ctrl.Result{}, err
 	}
+
+	// pluginName := rlc.Spec.RateLimit.Name
+	// existingPlugins := route.Annotations["konghq.com/plugins"]
+	// if existingPlugins != "" {
+	// 	// Merge plugins: append the new one if not already present
+	// 	plugins := strings.Split(existingPlugins, ",")
+	// 	found := false
+	// 	for _, p := range plugins {
+	// 		if strings.TrimSpace(p) == pluginName {
+	// 			found = true
+	// 			logger.Info("Plugin already exists in annotations")
+	// 			break
+	// 		}
+	// 	}
+	// 	if !found {
+	// 		plugins = append(plugins, pluginName)
+	// 		// Check if the previous plugin is the same as the new one
+	// 		logger.Info("Adding new plugin to existing plugins",
+	// 			"route", route.Name,
+	// 			"pluginName", pluginName,
+	// 			"previousPlugin", plugins,
+	// 		)
+	// 	}
+	// 	route.Annotations["konghq.com/plugins"] = strings.Join(plugins, ",")
+	// } else {
+	// 	// First plugin being added
+	// 	route.Annotations["konghq.com/plugins"] = pluginName
+	// 	logger.Info("First plugin being added to annotations",
+	// 		"route", route.Name,
+	// 		"pluginName", pluginName,
+	// 	)
+	// }
+	// if err := r.Update(ctx, &route); err != nil {
+	// 	logger.Error(err, "failed to update HTTPRoute")
+	// 	return ctrl.Result{}, err
+	// }
 
 	// Update the RateLimitedConsumer status
 
@@ -143,7 +194,7 @@ func (r *RateLimitedConsumerReconciler) Reconcile(ctx context.Context, req ctrl.
 	// Update status
 	rlc.Status.Conditions = []metav1.Condition{condition}
 	rlc.Status.ObservedRoute = route.Name
-	rlc.Status.PluginApplied = pluginName
+	rlc.Status.PluginApplied = strings.Join(pluginNames, ",")
 	status_err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 		if err := r.Status().Update(ctx, &rlc); err != nil {
 			logger.Error(err, "failed to update RateLimitedConsumer status")
