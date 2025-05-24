@@ -140,46 +140,21 @@ func (r *RateLimitedConsumerReconciler) Reconcile(ctx context.Context, req ctrl.
 	logger.Info("Final plugin annotation", "route", route.Name, "plugins", route.Annotations["konghq.com/plugins"])
 
 	// Apply the update
-	if err := r.Update(ctx, &route); err != nil {
-		logger.Error(err, "failed to update HTTPRoute")
+	err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		var latest gatewayv1.HTTPRoute
+		if err := r.Get(ctx, client.ObjectKeyFromObject(&route), &latest); err != nil {
+			return err
+		}
+		latest.Annotations = route.Annotations
+		if err := r.Update(ctx, &latest); err != nil {
+			logger.Error(err, "failed to update HTTPRoute")
+			return err
+		}
+		return nil
+	})
+	if err != nil {
 		return ctrl.Result{}, err
 	}
-
-	// pluginName := rlc.Spec.RateLimit.Name
-	// existingPlugins := route.Annotations["konghq.com/plugins"]
-	// if existingPlugins != "" {
-	// 	// Merge plugins: append the new one if not already present
-	// 	plugins := strings.Split(existingPlugins, ",")
-	// 	found := false
-	// 	for _, p := range plugins {
-	// 		if strings.TrimSpace(p) == pluginName {
-	// 			found = true
-	// 			logger.Info("Plugin already exists in annotations")
-	// 			break
-	// 		}
-	// 	}
-	// 	if !found {
-	// 		plugins = append(plugins, pluginName)
-	// 		// Check if the previous plugin is the same as the new one
-	// 		logger.Info("Adding new plugin to existing plugins",
-	// 			"route", route.Name,
-	// 			"pluginName", pluginName,
-	// 			"previousPlugin", plugins,
-	// 		)
-	// 	}
-	// 	route.Annotations["konghq.com/plugins"] = strings.Join(plugins, ",")
-	// } else {
-	// 	// First plugin being added
-	// 	route.Annotations["konghq.com/plugins"] = pluginName
-	// 	logger.Info("First plugin being added to annotations",
-	// 		"route", route.Name,
-	// 		"pluginName", pluginName,
-	// 	)
-	// }
-	// if err := r.Update(ctx, &route); err != nil {
-	// 	logger.Error(err, "failed to update HTTPRoute")
-	// 	return ctrl.Result{}, err
-	// }
 
 	// Update the RateLimitedConsumer status
 
@@ -196,7 +171,12 @@ func (r *RateLimitedConsumerReconciler) Reconcile(ctx context.Context, req ctrl.
 	rlc.Status.ObservedRoute = route.Name
 	rlc.Status.PluginApplied = strings.Join(pluginNames, ",")
 	status_err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-		if err := r.Status().Update(ctx, &rlc); err != nil {
+		var latest ratelimitv1alpha1.RateLimitedConsumer
+		if err := r.Get(ctx, client.ObjectKeyFromObject(&rlc), &latest); err != nil {
+			return err
+		}
+		latest.Status = rlc.Status
+		if err := r.Status().Update(ctx, &latest); err != nil {
 			logger.Error(err, "failed to update RateLimitedConsumer status")
 			return err
 		}

@@ -130,18 +130,16 @@ var _ = Describe("RateLimitedConsumer Controller", func() {
 				NamespacedName: typeNamespacedName,
 			})
 			Expect(err).NotTo(HaveOccurred())
-			// TODO(user): Add more specific assertions depending on your controller's reconciliation logic.
-			// Example: If you expect a certain status condition after reconciliation, verify it here.
-
 			// Verify annotation on the route
-			Eventually(func(g Gomega) map[string]string {
-				var updated gatewayv1.HTTPRoute
-				err := k8sClient.Get(ctx, types.NamespacedName{Name: routeName, Namespace: testNamespace}, &updated)
-				g.Expect(err).ToNot(HaveOccurred())
-				fmt.Println("Current annotation value:", updated.Annotations["konghq.com/plugins"])
-				return updated.Annotations
-			}, timeout, interval).Should(HaveKeyWithValue("konghq.com/plugins", pluginName))
-
+			for _, expectedPlugin := range pluginName {
+				Eventually(func(g Gomega) map[string]string {
+					var updated gatewayv1.HTTPRoute
+					err := k8sClient.Get(ctx, types.NamespacedName{Name: routeName, Namespace: testNamespace}, &updated)
+					g.Expect(err).ToNot(HaveOccurred())
+					fmt.Println("Current annotation value:", updated.Annotations["konghq.com/plugins"], "expected:", expectedPlugin)
+					return updated.Annotations
+				}, timeout, interval).Should(HaveKeyWithValue("konghq.com/plugins", expectedPlugin))
+			}
 		})
 	})
 })
