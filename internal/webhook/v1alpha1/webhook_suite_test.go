@@ -39,7 +39,7 @@ import (
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
-	ratelimitv1alpha1 "github.com/mingli103/k8s-controller/api/v1alpha1"
+	ratelimitv1alpha1 "github.com/mingli103/k8s-simple-controller/api/v1alpha1"
 	// +kubebuilder:scaffold:imports
 )
 

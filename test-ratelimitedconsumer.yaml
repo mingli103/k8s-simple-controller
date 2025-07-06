@@ -1,4 +1,4 @@
-apiVersion: ratelimit.itbl.sre.co/v1alpha1
+apiVersion: ratelimit.test.annotation.com/v1alpha1
 kind: RateLimitedConsumer
 metadata:
   name: example-ratelimitedconsumer-5f2f1e04
@@ -11,7 +11,7 @@ spec:
   targetRoute:
     name: dummy-route
 # ---
-# apiVersion: ratelimit.itbl.sre.co/v1alpha1
+# apiVersion: ratelimit.test.annotation.com/v1alpha1
 # kind: RateLimitedConsumer
 # metadata:
 #   name: example-ratelimitedconsumer-5f2f1e06
@@ -22,7 +22,7 @@ spec:
 #   targetRoute:
 #     name: dummy-route
 # ---
-# apiVersion: ratelimit.itbl.sre.co/v1alpha1
+# apiVersion: ratelimit.test.annotation.com/v1alpha1
 # kind: RateLimitedConsumer
 # metadata:
 #   name: example-ratelimitedconsumer-test-validation

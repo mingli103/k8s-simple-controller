@@ -15,7 +15,7 @@ webhooks:
   name: vratelimitedconsumer-v1alpha1.kb.io
   rules:
   - apiGroups:
-    - ratelimit.itbl.sre.co
+    - ratelimit.test.annotation.com
     apiVersions:
     - v1alpha1
     operations:

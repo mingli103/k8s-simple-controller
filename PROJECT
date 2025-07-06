@@ -2,20 +2,20 @@
 # This file is used to track the info used to scaffold your project
 # and allow the plugins properly work.
 # More info: https://book.kubebuilder.io/reference/project-config.html
-domain: itbl.sre.co
+domain: test.annotation.com
 layout:
 - go.kubebuilder.io/v4
-projectName: k8s-controller
-repo: github.com/mingli103/k8s-controller
+projectName: k8s-simple-controller
+repo: github.com/mingli103/k8s-simple-controller
 resources:
 - api:
     crdVersion: v1
     namespaced: true
   controller: true
-  domain: itbl.sre.co
+  domain: test.annotation.com
   group: ratelimit
   kind: RateLimitedConsumer
-  path: github.com/mingli103/k8s-controller/api/v1alpha1
+  path: github.com/mingli103/k8s-simple-controller/api/v1alpha1
   version: v1alpha1
   webhooks:
     validation: true

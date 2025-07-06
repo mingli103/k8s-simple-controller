@@ -38,9 +38,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
 
-	ratelimitv1alpha1 "github.com/mingli103/k8s-controller/api/v1alpha1"
-	"github.com/mingli103/k8s-controller/internal/controller"
-	webhookratelimitv1alpha1 "github.com/mingli103/k8s-controller/internal/webhook/v1alpha1"
+	ratelimitv1alpha1 "github.com/mingli103/k8s-simple-controller/api/v1alpha1"
+	"github.com/mingli103/k8s-simple-controller/internal/controller"
+	webhookratelimitv1alpha1 "github.com/mingli103/k8s-simple-controller/internal/webhook/v1alpha1"
 	// +kubebuilder:scaffold:imports
 )
 
@@ -131,9 +131,12 @@ func main() {
 		})
 	}
 
-	webhookServer := webhook.NewServer(webhook.Options{
-		TLSOpts: webhookTLSOpts,
-	})
+	var webhookServer webhook.Server
+	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
+		webhookServer = webhook.NewServer(webhook.Options{
+			TLSOpts: webhookTLSOpts,
+		})
+	}
 
 	// Metrics endpoint is enabled in 'config/default/kustomization.yaml'. The Metrics options configure the server.
 	// More info:
@@ -186,7 +189,7 @@ func main() {
 		WebhookServer:          webhookServer,
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
-		LeaderElectionID:       "a432fc20.itbl.sre.co",
+		LeaderElectionID:       "a432fc20.test.annotation.com",
 		// LeaderElectionReleaseOnCancel defines if the leader should step down voluntarily
 		// when the Manager ends. This requires the binary to immediately end when the
 		// Manager is stopped, otherwise, this setting is unsafe. Setting this significantly

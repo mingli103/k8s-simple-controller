@@ -1,9 +1,13 @@
-apiVersion: ratelimit.itbl.sre.co/v1alpha1
+apiVersion: ratelimit.test.annotation.com/v1alpha1
 kind: RateLimitedConsumer
 metadata:
   labels:
-    app.kubernetes.io/name: k8s-controller
+    app.kubernetes.io/name: k8s-simple-controller
     app.kubernetes.io/managed-by: kustomize
   name: ratelimitedconsumer-sample
 spec:
-  # TODO(user): Add fields here
+  rateLimit:
+    names: 
+      - test-rate-limit
+  targetRoute:
+    name: dummy-route

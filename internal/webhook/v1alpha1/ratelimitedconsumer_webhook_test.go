@@ -20,7 +20,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	ratelimitv1alpha1 "github.com/mingli103/k8s-controller/api/v1alpha1"
+	ratelimitv1alpha1 "github.com/mingli103/k8s-simple-controller/api/v1alpha1"
 	// TODO (user): Add any additional imports if needed
 )
 

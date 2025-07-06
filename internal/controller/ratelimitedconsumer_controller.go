@@ -37,8 +37,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
 
-	"github.com/mingli103/k8s-controller/api/v1alpha1"
-	ratelimitv1alpha1 "github.com/mingli103/k8s-controller/api/v1alpha1"
+	"github.com/mingli103/k8s-simple-controller/api/v1alpha1"
+	ratelimitv1alpha1 "github.com/mingli103/k8s-simple-controller/api/v1alpha1"
 )
 
 // RateLimitedConsumerReconciler reconciles a RateLimitedConsumer object
@@ -47,9 +47,9 @@ type RateLimitedConsumerReconciler struct {
 	Scheme *runtime.Scheme
 }
 
-// +kubebuilder:rbac:groups=ratelimit.itbl.sre.co,resources=ratelimitedconsumers,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=ratelimit.itbl.sre.co,resources=ratelimitedconsumers/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=ratelimit.itbl.sre.co,resources=ratelimitedconsumers/finalizers,verbs=update
+// +kubebuilder:rbac:groups=ratelimit.test.annotation.com,resources=ratelimitedconsumers,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=ratelimit.test.annotation.com,resources=ratelimitedconsumers/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=ratelimit.test.annotation.com,resources=ratelimitedconsumers/finalizers,verbs=update
 // +kubebuilder:rbac:groups=gateway.networking.k8s.io,resources=httproutes,verbs=get;list;watch;update;patch
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to

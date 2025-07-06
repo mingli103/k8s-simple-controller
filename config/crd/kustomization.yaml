@@ -2,7 +2,7 @@
 # since it depends on service name and namespace that are out of this kustomize package.
 # It should be run by config/default
 resources:
-- bases/ratelimit.itbl.sre.co_ratelimitedconsumers.yaml
+- bases/ratelimit.test.annotation.com_ratelimitedconsumers.yaml
 # +kubebuilder:scaffold:crdkustomizeresource
 
 patches:

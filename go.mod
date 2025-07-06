@@ -1,4 +1,4 @@
-module github.com/mingli103/k8s-controller
+module github.com/mingli103/k8s-simple-controller
 
 go 1.24.0
 

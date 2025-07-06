@@ -29,7 +29,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	gatewayv1 "sigs.k8s.io/gateway-api/apis/v1"
 
-	ratelimitv1alpha1 "github.com/mingli103/k8s-controller/api/v1alpha1"
+	ratelimitv1alpha1 "github.com/mingli103/k8s-simple-controller/api/v1alpha1"
 )
 
 var _ = Describe("RateLimitedConsumer Controller", func() {

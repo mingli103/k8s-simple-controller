@@ -15,7 +15,7 @@ rules:
   - update
   - watch
 - apiGroups:
-  - ratelimit.itbl.sre.co
+  - ratelimit.test.annotation.com
   resources:
   - ratelimitedconsumers
   verbs:
@@ -27,13 +27,13 @@ rules:
   - update
   - watch
 - apiGroups:
-  - ratelimit.itbl.sre.co
+  - ratelimit.test.annotation.com
   resources:
   - ratelimitedconsumers/finalizers
   verbs:
   - update
 - apiGroups:
-  - ratelimit.itbl.sre.co
+  - ratelimit.test.annotation.com
   resources:
   - ratelimitedconsumers/status
   verbs:

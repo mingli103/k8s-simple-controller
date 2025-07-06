@@ -27,7 +27,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/mingli103/k8s-controller/test/utils"
+	"github.com/mingli103/k8s-simple-controller/test/utils"
 )
 
 // namespace where the project is deployed in

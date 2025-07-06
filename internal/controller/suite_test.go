@@ -22,7 +22,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	ratelimitv1alpha1 "github.com/mingli103/k8s-controller/api/v1alpha1"
+	ratelimitv1alpha1 "github.com/mingli103/k8s-simple-controller/api/v1alpha1"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"k8s.io/client-go/kubernetes/scheme"

@@ -4,9 +4,9 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.17.2
-  name: ratelimitedconsumers.ratelimit.itbl.sre.co
+  name: ratelimitedconsumers.ratelimit.test.annotation.com
 spec:
-  group: ratelimit.itbl.sre.co
+  group: ratelimit.test.annotation.com
   names:
     kind: RateLimitedConsumer
     listKind: RateLimitedConsumerList
